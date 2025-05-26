@@ -17,4 +17,18 @@ Thumbs.db
 # Backup files
 *.bak
 *.backup
-*-backup 
+*-backup
+
+# Archivos de configuración con contraseñas
+/etc/nextcloud/mysql.cnf
+/etc/nextcloud/backup.conf
+
+# Archivos de backup
+/var/backups/nextcloud/
+
+# Archivos de log
+/var/log/nextcloud-backup.log
+
+# Archivos temporales
+*.tmp
+*.temp 

@@ -1,0 +1,8 @@
+# Configuración de la base de datos
+DB_NAME="nextcloud"
+
+# Nota: Las credenciales de la base de datos deben estar en /etc/nextcloud/mysql.cnf
+# con el siguiente formato:
+# [client]
+# user=nextcloud
+# password=tu_contraseña 

@@ -40,7 +40,7 @@
 
 ## Directorios Importantes
 - **Instalación Nextcloud**: /var/www/html/nextcloud
-- **Datos**: /var/www/html/nextcloud/data
+- **Datos**: /mnt/unraid_nextcloud/data
 - **Configuración**: /var/www/html/nextcloud/config
 - **Logs Apache**: /var/log/apache2/
 
@@ -59,29 +59,69 @@
 
 ## Mantenimiento
 ### Backups
-- Respaldos diarios de la base de datos
-- Respaldos semanales de archivos de configuración
+- Respaldos diarios completos que incluyen:
+  - Base de datos MariaDB
+  - Archivos de configuración de Nextcloud
+  - Certificados SSL (autofirmado y Let's Encrypt)
+  - Archivos de configuración de Apache
+  - Datos de Nextcloud
 - Ubicación: /var/backups/nextcloud/
+- Los backups se ejecutan diariamente a las 2:00 AM
+- Logs de backup: /var/log/nextcloud-backup.log
 - **Renovación de certificado Let's Encrypt**: Se ejecuta automáticamente dos veces al día para mantener la validez del certificado SSL
 
-### Actualizaciones
-```bash
-# Actualizar Nextcloud
-sudo -u www-data php occ upgrade
+### Scripts de Backup y Restauración
+#### Ubicación de los Scripts
+- Script de backup: `/usr/local/bin/backup-nextcloud.sh`
+- Script de restauración: `/mnt/unraid_nextcloud/backups/restore-nextcloud.sh`
+- Configuración de cron: `/etc/cron.d/nextcloud-backups`
+- Archivo de configuración: `/etc/nextcloud/backup.conf`
+- Credenciales MySQL: `/etc/nextcloud/mysql.cnf`
 
-# Verificar estado
-sudo -u www-data php occ status
+#### Configuración Segura
+1. Crear el archivo de configuración:
+```bash
+sudo mkdir -p /etc/nextcloud
+sudo cp /usr/local/bin/backup.conf.example /etc/nextcloud/backup.conf
 ```
 
-### Tareas Programadas (Cron)
-- Cron de sistema configurado para tareas de mantenimiento
-- Ejecutado como usuario www-data
+2. Crear el archivo de credenciales MySQL:
+```bash
+sudo nano /etc/nextcloud/mysql.cnf
+```
+Añadir:
+```ini
+[client]
+user=nextcloud
+password=tu_contraseña
+```
 
-## Configuración de Red
-### USG (Ubiquiti Security Gateway)
-- Port forwarding configurado para puertos 7086 y 444
-- Reglas de firewall para permitir tráfico necesario
-- Gateway: 192.168.2.1
+3. Asegurar los permisos:
+```bash
+sudo chown root:root /etc/nextcloud/mysql.cnf
+sudo chmod 600 /etc/nextcloud/mysql.cnf
+```
+
+#### Uso del Script de Backup
+El script de backup se ejecuta automáticamente cada día a las 2:00 AM. Si necesitas ejecutarlo manualmente:
+```bash
+sudo /usr/local/bin/backup-nextcloud.sh
+```
+
+#### Uso del Script de Restauración
+Para restaurar un backup:
+```bash
+# Dar permisos de ejecución al script (solo la primera vez)
+sudo chmod +x /mnt/unraid_nextcloud/backups/restore-nextcloud.sh
+
+# Ejecutar la restauración (reemplaza YYYYMMDD con la fecha del backup)
+sudo /mnt/unraid_nextcloud/backups/restore-nextcloud.sh YYYYMMDD
+```
+
+### Montaje de Unraid
+- Punto de montaje: /mnt/unraid_nextcloud
+- IP del servidor Unraid: 192.168.2.75
+- Compartido: Nextcloud
 
 ## Solución de Problemas Comunes
 ### Permisos
@@ -111,4 +151,4 @@ sudo systemctl status apache2
 - Documentación mantenida en GitHub: https://github.com/rojarrolla/nextcloud-docs
 
 ---
-Última actualización: Marzo 2024 
+Última actualización: Mayo 2025 
