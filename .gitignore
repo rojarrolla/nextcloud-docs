@@ -31,4 +31,53 @@ Thumbs.db
 
 # Archivos temporales
 *.tmp
-*.temp 
+*.temp
+
+# Archivos de configuración con información sensible
+**/config.php
+**/config/config.php
+**/config/autoconfig.php
+
+# Logs
+*.log
+logs/
+
+# Archivos de backup
+*.sql
+*.tar.gz
+*.zip
+
+# Archivos de IDE
+.idea/
+.vscode/
+
+# Archivos de certificados
+*.pem
+*.key
+*.crt
+*.csr
+*.srl
+*.p12
+*.pfx
+
+# Archivos de base de datos
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos de caché
+cache/
+*.cache
+
+# Archivos de sesión
+sessions/
+*.sess
+
+# Archivos de configuración local
+.env
+.env.local
+.env.*.local
+
+# Archivos de backup locales
+backups/
+backup/ 

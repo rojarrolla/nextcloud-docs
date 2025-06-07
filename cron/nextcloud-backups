@@ -1,0 +1,4 @@
+# Backup diario de Nextcloud
+0 0 * * * root /usr/local/bin/backup-nextcloud.sh >> /var/log/nextcloud-backup.log 2>&1 
+0 14 * * * root /usr/local/bin/backup-nextcloud.sh >> /var/log/nextcloud-backup.log 2>&1 
+0 19 * * * root /usr/local/bin/backup-nextcloud.sh >> /var/log/nextcloud-backup.log 2>&1 

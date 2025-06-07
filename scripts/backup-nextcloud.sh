@@ -1,42 +1,63 @@
 #!/bin/bash
 
-# Cargar configuración
-if [ -f "/etc/nextcloud/backup.conf" ]; then
-    source "/etc/nextcloud/backup.conf"
-else
-    echo "Error: Archivo de configuración no encontrado"
-    exit 1
-fi
-
 # Configuración
-BACKUP_DIR="/var/backups/nextcloud"
+BACKUP_BASE_DIR="/mnt/unraid_nextcloud/backups"
 DATE=$(date +%Y%m%d)
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+TIME=$(date +%H%M%S)
+BACKUP_DIR="${BACKUP_BASE_DIR}/${DATE}/${TIME}"
 NEXTCLOUD_DIR="/var/www/html/nextcloud"
-CONFIG_DIR="/etc/apache2"
-SSL_DIR="/etc/ssl"
-LETSENCRYPT_DIR="/etc/letsencrypt"
-RETENTION_DAYS=30
+DB_USER="nextcloud"
+DB_PASS="NextCloud2025!"
+DB_NAME="nextcloud"
+LOG_FILE="/var/log/nextcloud-backup.log"
 
-# Crear directorio de backup si no existe
+# Función para logging
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
+
+# Crear directorio de backup
 mkdir -p "$BACKUP_DIR"
+chown www-data:www-data "$BACKUP_DIR"
+chmod 750 "$BACKUP_DIR"
+
+log "Iniciando backup en $BACKUP_DIR"
 
 # Backup de la base de datos
-echo "Iniciando backup de la base de datos..."
-mysqldump --defaults-extra-file=/etc/nextcloud/mysql.cnf "$DB_NAME" > "$BACKUP_DIR/nextcloud_db_$DATE.sql"
+log "Realizando backup de la base de datos..."
+DB_BACKUP="${BACKUP_DIR}/nextcloud_db.sql"
+mysqldump -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" > "$DB_BACKUP"
+chown www-data:www-data "$DB_BACKUP"
+chmod 640 "$DB_BACKUP"
 
-# Backup de archivos de configuración y datos
-echo "Iniciando backup de archivos..."
-tar -czf "$BACKUP_DIR/nextcloud_full_$TIMESTAMP.tar.gz" \
-    "$NEXTCLOUD_DIR/config" \
-    "$CONFIG_DIR/sites-available" \
-    "$SSL_DIR/certs/nextcloud-selfsigned.crt" \
-    "$SSL_DIR/private/nextcloud-selfsigned.key" \
-    "$LETSENCRYPT_DIR/live" \
-    "$NEXTCLOUD_DIR/data"
+# Backup de la configuración
+log "Realizando backup de la configuración..."
+CONFIG_BACKUP="${BACKUP_DIR}/nextcloud_config.tar.gz"
+tar -czf "$CONFIG_BACKUP" \
+    "${NEXTCLOUD_DIR}/config" \
+    "${NEXTCLOUD_DIR}/themes" \
+    "${NEXTCLOUD_DIR}/apps" \
+    /etc/apache2/sites-available/nextcloud*.conf \
+    /etc/ssl/certs/nextcloud-selfsigned.crt \
+    /etc/ssl/private/nextcloud-selfsigned.key \
+    /etc/letsencrypt/live/
+chown www-data:www-data "$CONFIG_BACKUP"
+chmod 640 "$CONFIG_BACKUP"
 
-# Limpiar backups antiguos
-echo "Limpiando backups antiguos..."
-find "$BACKUP_DIR" -name "nextcloud_*" -type f -mtime +$RETENTION_DAYS -delete
+# Backup completo (excluyendo datos de Unraid)
+log "Realizando backup completo..."
+FULL_BACKUP="${BACKUP_DIR}/nextcloud_full.tar.gz"
+tar -czf "$FULL_BACKUP" \
+    --exclude="${NEXTCLOUD_DIR}/data" \
+    --exclude="${NEXTCLOUD_DIR}/config" \
+    --exclude="${NEXTCLOUD_DIR}/themes" \
+    --exclude="${NEXTCLOUD_DIR}/apps" \
+    "$NEXTCLOUD_DIR"
+chown www-data:www-data "$FULL_BACKUP"
+chmod 640 "$FULL_BACKUP"
 
-echo "Backup completado: $TIMESTAMP" 
+# Limpieza de backups antiguos (mantener solo 7 días)
+log "Limpiando backups antiguos..."
+find "$BACKUP_BASE_DIR" -type d -mtime +7 -exec rm -rf {} \;
+
+log "Backup completado exitosamente"
